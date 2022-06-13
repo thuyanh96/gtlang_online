@@ -917,19 +917,6 @@ function tokens_arr_to_name_and_type_format($tokens_arr) {
     }
     return $return;
 }
-function replace_get_ele_with_complex_value($expr) {
-    if (! is_array ( $expr ) || ! isset ( $expr ["type"] ) || $expr ["type"] != "expr")
-        return $expr;
-    if (isset ( $expr ["body"] [1] ) && $expr ["body"] [1] == [ "name" => "get_ele","type" => "operator"
-    ] && sizeof ( $expr ["body"] ) == 3) {
-        $expr = [ "type" => "complex_value","name" => $expr ["body"] [0],"key" => $expr ["body"] [2]
-        ];
-    }
-    foreach ( $expr as $k => $v ) {
-        $expr [$k] = replace_get_ele_with_complex_value ( $v );
-    }
-    return $expr;
-}
 // function expr_simplifier($expr) {
 // $value_types = [ "string","number","expr","var","array","complex_value"
 // ];
@@ -1045,7 +1032,7 @@ function parse_expression($tokens_arr) {
             $operators_count ++;
     }
     if ($operators_count > 1) {
-        return (replace_get_ele_with_complex_value ( process_multiple_operators ( $tokens_arr ) ));
+        return ((process_multiple_operators ( $tokens_arr )));
     }
     // new object of class
     if (is_new_clause ( $tokens_arr )) {
@@ -1073,7 +1060,7 @@ function parse_expression($tokens_arr) {
         ]);
     } // simple single operator expr
     $tokens_arr = tokens_arr_to_name_and_type_format ( $tokens_arr );
-    $tokens_arr = replace_get_ele_with_complex_value ( $tokens_arr );
+    $tokens_arr = ($tokens_arr);
     if (sizeof ( $tokens_arr ) == 1) {
         return $tokens_arr [0];
     } else
@@ -2291,8 +2278,8 @@ function is_tokens_line($arr) {
 // ]
 // ] ) );
 
-echo array_reconstruct ( $funcs ) . PHP_EOL . PHP_EOL;
-echo array_reconstruct ( $main ) . PHP_EOL . PHP_EOL . PHP_EOL;
+// echo array_reconstruct ( $funcs ) . PHP_EOL . PHP_EOL;
+// echo array_reconstruct ( $main ) . PHP_EOL . PHP_EOL . PHP_EOL;
 // ===========================================================================================
 $global_vars = $local_vars = [ ];
 $current_func_lv = 0;
@@ -2551,6 +2538,20 @@ function get_var_global_value($parsed) {
 function get_var_local_value($parsed) {
     return $GLOBALS ["local_vars"] [$parsed ["name"]];
 }
+function replace_get_ele_with_complex_value($expr) {
+    if (! is_array ( $expr ))
+        return $expr;
+    if (isset ( $expr ["body"] [1] ) && $expr ["body"] [1] == [ "name" => "get_ele","type" => "operator"
+    ] && sizeof ( $expr ["body"] ) == 3) {
+        $expr = [ "type" => "complex_value","name" => $expr ["body"] [0],"key" => $expr ["body"] [2]
+        ];
+    }
+    // if (isset ( $expr ["body"] ))
+    foreach ( $expr as $k => $v ) {
+        $expr [$k] = replace_get_ele_with_complex_value ( $v );
+    }
+    return $expr;
+}
 function call_function($parsed) {
     // count required params;
     $function = [ ];
@@ -2658,4 +2659,6 @@ function gt_eval($parsed) {
     }
     throw new Exception ( "unsupported expr" );
 }
-gt_exec ( $main );
+$main = replace_get_ele_with_complex_value ( $main );
+echo array_reconstruct ( $main ) . PHP_EOL . PHP_EOL . PHP_EOL;
+gt_exec ( replace_get_ele_with_complex_value ( $main ) );
