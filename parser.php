@@ -2302,32 +2302,46 @@ function assign_var($var, $value) {
         } else
             throw new Exception ( "no global var $var_name" );
     } elseif ($var ["type"] == "complex_value") {
-        $ref = get_ref ( $var ["name"], gt_eval ( $var ["key"] ) );
-        $ref = ($value);
+        $ref = &get_ref_of_element ( $var ["name"], gt_eval ( $var ["key"] ) );
+        $ref = $value;
     } else
         throw new Exception ( "not valid left side of assignment" );
 }
-function &get_ref($value_name, $value_key) {
-    if ($value_name ["type"] == "expr") {
-        return get_ref ( $value_name ["body"], $value_key );
-    } elseif ($value_name ["type"] == "var") {
+function &get_ref_single($value_name, $default_value_if_var_not_exist = null) {
+    if ($value_name ["type"] == "var") {
         $var_name = $value_name ["name"];
         if ($GLOBALS ["current_func_lv"] == 0) {
-            $return = &$GLOBALS ["global_vars"] [$var_name];
-            return $return;
+            if (! isset ( $GLOBALS ["global_vars"] [$var_name] ))
+                $GLOBALS ["global_vars"] [$var_name] = $default_value_if_var_not_exist;
+            return $GLOBALS ["global_vars"] [$var_name];
         } else {
-            $return = &$GLOBALS ["local_vars"] [$var_name];
-            return $return;
+            if (! isset ( $GLOBALS ["local_vars"] [$var_name] ))
+                $GLOBALS ["local_vars"] [$var_name] = $default_value_if_var_not_exist;
+            return $GLOBALS ["local_vars"] [$var_name];
         }
+    } else {
+        throw new Exception ( "expr not allowed here" );
+    }
+}
+function &get_ref_of_element($value_name, $value_key) {
+    if ($value_name ["type"] == "expr") {
+        return get_ref_of_element ( $value_name ["body"], $value_key );
+    } elseif ($value_name ["type"] == "var") {
+        $name = &get_ref_single ( $value_name, [ ] );
+        $key = gt_eval ( $value_key );
+        return $name [$key];
     } elseif ($value_name ["type"] == "complex_value") {
-        $ref = get_ref ( value_name ["name"] );
+
+        $ref = &get_ref_of_element ( $value_name ["name"], $value_name ["key"] );
+
         $key = gt_eval ( $value_key );
         if (isset ( $ref [$key] )) {
             $return = &$ref [$key];
         } else {
-            $ref [$key] = "";
+            $ref [$key] = null;
             $return = &$ref [$key];
         }
+        return $return;
     } else {
         throw new Exception ( "not valid left side of assignment" );
     }
@@ -2617,6 +2631,8 @@ function create_array_var($parsed) {
     return $return;
 }
 function gt_eval($parsed) {
+    if (! is_array ( $parsed ))
+        return $parsed;
     if (in_array ( $parsed ["type"], [ "number","string"
     ] ))
         return $parsed ["name"];
