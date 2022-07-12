@@ -2376,7 +2376,7 @@ function &ref_var($var_complex) {
 function gt_exec($parsed) {
     if ($parsed ["type"] == "block" || $parsed ["type"] == "inline_block") {
         foreach ( $parsed ["body"] as $cmd ) {
-            if ($GLOBALS ["break"] > 0 || $GLOBALS ["break"] > 0) {
+            if ($GLOBALS ["break"] > 0 || $GLOBALS ["continue"] > 0) {
                 // $GLOBALS ["break"] --;
                 return 1;
             }
